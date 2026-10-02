@@ -458,4 +458,67 @@ svg {
     text-overflow: ellipsis;
     white-space: nowrap;
   }
+}/* Offline payment status */
+
+.offline-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  margin: -4px 0 20px;
+  padding: 13px;
+  border: 1px solid #dbe3f0;
+  border-radius: 14px;
+  background: #f6f8fc;
+}
+
+.offline-notice svg {
+  width: 19px;
+  height: 19px;
+  flex: 0 0 19px;
+  margin-top: 1px;
+}
+
+.offline-notice div {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.offline-notice strong {
+  font-size: 12px;
+}
+
+.offline-notice span {
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.status {
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.status.pending {
+  color: #946200;
+}
+
+.status.completed {
+  color: var(--success);
+}
+
+.sync-button {
+  width: 100%;
+  min-height: 48px;
+  margin-bottom: 12px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.sync-button:hover {
+  background: #fafbfc;
 }

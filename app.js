@@ -1,4 +1,4 @@
-// OfflinePay — Demo Wallet Engine
+// OfflinePay — Demo Offline Payment Engine
 // Demo money only. No bank, UPI, or real-money connection.
 
 const STORAGE_KEY = "offlinepay_demo_wallet";
@@ -11,6 +11,7 @@ const defaultState = {
       person: "Demo transaction",
       amount: 250,
       type: "received",
+      status: "completed",
       time: Date.now() - 60000
     },
     {
@@ -18,6 +19,7 @@ const defaultState = {
       person: "Demo transaction",
       amount: 100,
       type: "sent",
+      status: "completed",
       time: Date.now() - 120000
     }
   ]
@@ -55,7 +57,7 @@ const receiveButton = document.getElementById("receiveButton");
 
 const navItems = document.querySelectorAll(".nav-item");
 const activitySection = document.querySelector(".activity");
-const homeSection = document.querySelector(".balance-card");
+const viewAllButton = document.querySelector(".section-header button");
 
 function saveState() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
@@ -75,6 +77,14 @@ function escapeHTML(value) {
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#039;");
+}
+
+function statusText(status) {
+  if (status === "pending") {
+    return "Pending sync";
+  }
+
+  return "Completed";
 }
 
 function renderTransactions(limit = null) {
@@ -129,7 +139,12 @@ function renderTransactions(limit = null) {
 
       <div class="transaction-info">
         <strong>${escapeHTML(item.title)}</strong>
-        <span>${escapeHTML(item.person)}</span>
+        <span>
+          ${escapeHTML(item.person)} ·
+          <span class="status ${item.status}">
+            ${statusText(item.status)}
+          </span>
+        </span>
       </div>
 
       <strong class="amount ${
@@ -143,12 +158,13 @@ function renderTransactions(limit = null) {
   });
 }
 
-function addTransaction(title, amount, type, person) {
+function addTransaction(title, amount, type, person, status = "completed") {
   state.transactions.unshift({
     title,
     person,
     amount,
     type,
+    status,
     time: Date.now()
   });
 
@@ -164,7 +180,7 @@ function showSendScreen() {
     <div class="modal">
       <div class="modal-header">
         <div>
-          <p class="eyebrow">DEMO PAYMENT</p>
+          <p class="eyebrow">OFFLINE DEMO</p>
           <h2>Send money</h2>
         </div>
 
@@ -174,6 +190,17 @@ function showSendScreen() {
             <path d="M18 6 6 18"></path>
           </svg>
         </button>
+      </div>
+
+      <div class="offline-notice">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M5 12h14"></path>
+          <path d="M12 5v14"></path>
+        </svg>
+        <div>
+          <strong>Offline mode</strong>
+          <span>This demo payment will be stored as pending.</span>
+        </div>
       </div>
 
       <label>
@@ -219,7 +246,7 @@ function showSendScreen() {
       </div>
 
       <button class="primary-button" id="confirmSendButton">
-        Confirm send
+        Create pending payment
       </button>
 
       <button class="secondary-button" id="cancelSendButton">
@@ -281,7 +308,8 @@ function showSendScreen() {
         "Payment sent",
         amount,
         "sent",
-        note ? `${recipient} • ${note}` : recipient
+        note ? `${recipient} • ${note}` : recipient,
+        "pending"
       );
 
       updateBalance();
@@ -387,7 +415,8 @@ function showReceiveScreen() {
         "Payment received",
         amount,
         "received",
-        sender
+        sender,
+        "completed"
       );
 
       updateBalance();
@@ -396,17 +425,39 @@ function showReceiveScreen() {
   );
 }
 
-function showRecentActivity() {
-  renderTransactions(5);
+function syncPendingPayments() {
+  const pending = state.transactions.filter(
+    (transaction) => transaction.status === "pending"
+  );
 
-  activitySection.scrollIntoView({
-    behavior: "smooth",
-    block: "start"
+  if (pending.length === 0) {
+    alert("No pending demo payments.");
+    return;
+  }
+
+  pending.forEach((transaction) => {
+    transaction.status = "completed";
   });
+
+  saveState();
+  renderTransactions();
+
+  alert(`${pending.length} demo payment(s) synced.`);
 }
 
 function showAllActivity() {
   renderTransactions();
+
+  const syncButton = document.createElement("button");
+  syncButton.className = "sync-button";
+  syncButton.textContent = "Sync pending payments";
+
+  syncButton.addEventListener("click", syncPendingPayments);
+
+  activitySection.insertBefore(
+    syncButton,
+    transactionsElement
+  );
 
   activitySection.scrollIntoView({
     behavior: "smooth",
@@ -450,11 +501,7 @@ navItems.forEach((item, index) => {
   });
 });
 
-const viewAllButton = document.querySelector(".section-header button");
-
-viewAllButton.addEventListener("click", () => {
-  showAllActivity();
-});
+viewAllButton.addEventListener("click", showAllActivity);
 
 updateBalance();
 renderTransactions(5);
