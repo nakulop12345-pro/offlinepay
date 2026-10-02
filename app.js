@@ -475,7 +475,7 @@ function showHome() {
 }
 
 sendButton.addEventListener("click", showSendScreen);
-receiveButton.addEventListener("click", showReceiveScreen);
+receiveButton.addEventListener("click", showReceiveQR);
 
 navItems.forEach((item, index) => {
   item.addEventListener("click", () => {
@@ -504,4 +504,66 @@ navItems.forEach((item, index) => {
 viewAllButton.addEventListener("click", showAllActivity);
 
 updateBalance();
-renderTransactions(5);
+renderTransactions(5);// Demo QR receiving
+
+function showReceiveQR() {
+  const root = document.getElementById("qrModalRoot");
+
+  root.innerHTML = `
+    <div class="modal-overlay">
+      <div class="modal qr-modal">
+
+        <div class="modal-header">
+          <div>
+            <p class="eyebrow">OFFLINEPAY DEMO</p>
+            <h2>Receive with QR</h2>
+          </div>
+
+          <button class="modal-close" id="closeQRButton" aria-label="Close">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M6 6l12 12"></path>
+              <path d="M18 6 6 18"></path>
+            </svg>
+          </button>
+        </div>
+
+        <div class="qr-box">
+          <div class="qr-placeholder">
+            <div class="qr-grid">
+              <span></span><span></span><span></span><span></span>
+              <span></span><span></span><span></span><span></span>
+              <span></span><span></span><span></span><span></span>
+              <span></span><span></span><span></span><span></span>
+            </div>
+          </div>
+        </div>
+
+        <div class="qr-user">
+          <strong>Demo User</strong>
+          <span>offlinepay-demo-001</span>
+        </div>
+
+        <p class="modal-description qr-description">
+          Demo QR only. Scanning this code does not move real money.
+        </p>
+
+        <button class="secondary-button" id="closeQRSecondary">
+          Close
+        </button>
+
+      </div>
+    </div>
+  `;
+
+  function closeQR() {
+    root.innerHTML = "";
+  }
+
+  document
+    .getElementById("closeQRButton")
+    .addEventListener("click", closeQR);
+
+  document
+    .getElementById("closeQRSecondary")
+    .addEventListener("click", closeQR);
+}

@@ -521,4 +521,71 @@ svg {
 
 .sync-button:hover {
   background: #fafbfc;
+}/* Demo QR screen */
+
+.qr-modal {
+  text-align: center;
+}
+
+.qr-modal .modal-header {
+  text-align: left;
+}
+
+.qr-box {
+  display: flex;
+  justify-content: center;
+  margin: 8px 0 18px;
+}
+
+.qr-placeholder {
+  width: 210px;
+  height: 210px;
+  display: grid;
+  place-items: center;
+  border: 10px solid white;
+  border-radius: 10px;
+  background: white;
+  box-shadow: 0 0 0 1px var(--border);
+}
+
+.qr-grid {
+  width: 170px;
+  height: 170px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+}
+
+.qr-grid span {
+  display: block;
+  border-radius: 2px;
+  background: var(--text);
+}
+
+.qr-grid span:nth-child(2),
+.qr-grid span:nth-child(5),
+.qr-grid span:nth-child(8),
+.qr-grid span:nth-child(11),
+.qr-grid span:nth-child(14) {
+  background: transparent;
+}
+
+.qr-user {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 12px;
+}
+
+.qr-user strong {
+  font-size: 15px;
+}
+
+.qr-user span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.qr-description {
+  margin-bottom: 18px;
 }
