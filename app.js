@@ -1,11 +1,12 @@
 // OfflinePay — Demo Wallet Engine
-// IMPORTANT: This prototype uses demo money only.
-// It does not connect to banks, UPI, or real payment systems.
+// Demo money only. No bank, UPI, or real-money connection.
 
 let balance = 1000;
 
 const balanceElement = document.getElementById("balance");
 const transactionsElement = document.getElementById("transactions");
+const sendButton = document.getElementById("sendButton");
+const receiveButton = document.getElementById("receiveButton");
 
 function updateBalance() {
   balanceElement.textContent = balance.toLocaleString("en-IN", {
@@ -14,7 +15,7 @@ function updateBalance() {
   });
 }
 
-function addTransaction(title, amount, type) {
+function addTransaction(title, amount, type, person = "Demo transaction") {
   const transaction = document.createElement("div");
   transaction.className = "transaction";
 
@@ -38,15 +39,15 @@ function addTransaction(title, amount, type) {
 
   const formattedAmount =
     type === "received"
-      ? `+₹${amount}`
-      : `−₹${amount}`;
+      ? `+₹${Number(amount).toFixed(2)}`
+      : `−₹${Number(amount).toFixed(2)}`;
 
   transaction.innerHTML = `
     ${icon}
 
     <div class="transaction-info">
       <strong>${title}</strong>
-      <span>Demo transaction</span>
+      <span>${person}</span>
     </div>
 
     <strong class="amount ${type === "received" ? "positive" : "negative"}">
@@ -57,63 +58,241 @@ function addTransaction(title, amount, type) {
   transactionsElement.prepend(transaction);
 }
 
-function sendMoney() {
-  const amount = prompt("Enter demo amount to send:");
+function showSendScreen() {
+  const overlay = document.createElement("div");
+  overlay.className = "modal-overlay";
 
-  if (amount === null) return;
+  overlay.innerHTML = `
+    <div class="modal">
+      <div class="modal-header">
+        <div>
+          <p class="eyebrow">DEMO PAYMENT</p>
+          <h2>Send money</h2>
+        </div>
 
-  const value = Number(amount);
+        <button class="modal-close" aria-label="Close">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M6 6l12 12"></path>
+            <path d="M18 6 6 18"></path>
+          </svg>
+        </button>
+      </div>
 
-  if (!Number.isFinite(value) || value <= 0) {
-    alert("Please enter a valid amount.");
-    return;
+      <label>
+        Recipient
+        <input
+          id="recipientInput"
+          type="text"
+          placeholder="Name or demo ID"
+          autocomplete="off"
+        >
+      </label>
+
+      <label>
+        Amount
+        <div class="amount-input">
+          <span>₹</span>
+          <input
+            id="sendAmountInput"
+            type="number"
+            min="1"
+            step="0.01"
+            placeholder="0.00"
+          >
+        </div>
+      </label>
+
+      <label>
+        Note
+        <input
+          id="noteInput"
+          type="text"
+          placeholder="Optional note"
+          autocomplete="off"
+        >
+      </label>
+
+      <div class="available-box">
+        <span>Available demo balance</span>
+        <strong>₹${balance.toLocaleString("en-IN", {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2
+        })}</strong>
+      </div>
+
+      <button class="primary-button" id="confirmSendButton">
+        Confirm send
+      </button>
+
+      <button class="secondary-button" id="cancelSendButton">
+        Cancel
+      </button>
+    </div>
+  `;
+
+  document.body.appendChild(overlay);
+
+  const recipientInput = document.getElementById("recipientInput");
+  const amountInput = document.getElementById("sendAmountInput");
+  const noteInput = document.getElementById("noteInput");
+
+  recipientInput.focus();
+
+  function closeModal() {
+    overlay.remove();
   }
 
-  if (value > balance) {
-    alert("Insufficient demo balance.");
-    return;
-  }
+  document
+    .querySelector(".modal-close")
+    .addEventListener("click", closeModal);
 
-  balance -= value;
+  document
+    .getElementById("cancelSendButton")
+    .addEventListener("click", closeModal);
 
-  updateBalance();
+  document
+    .getElementById("confirmSendButton")
+    .addEventListener("click", () => {
+      const recipient = recipientInput.value.trim();
+      const amount = Number(amountInput.value);
+      const note = noteInput.value.trim();
 
-  addTransaction(
-    "Payment sent",
-    value.toFixed(2),
-    "sent"
-  );
+      if (!recipient) {
+        alert("Please enter a recipient.");
+        recipientInput.focus();
+        return;
+      }
+
+      if (!Number.isFinite(amount) || amount <= 0) {
+        alert("Please enter a valid amount.");
+        amountInput.focus();
+        return;
+      }
+
+      if (amount > balance) {
+        alert("Insufficient demo balance.");
+        amountInput.focus();
+        return;
+      }
+
+      balance -= amount;
+      updateBalance();
+
+      addTransaction(
+        "Payment sent",
+        amount,
+        "sent",
+        note ? `${recipient} • ${note}` : recipient
+      );
+
+      closeModal();
+    });
 }
 
-function receiveMoney() {
-  const amount = prompt("Enter demo amount to receive:");
+function showReceiveScreen() {
+  const overlay = document.createElement("div");
+  overlay.className = "modal-overlay";
 
-  if (amount === null) return;
+  overlay.innerHTML = `
+    <div class="modal">
+      <div class="modal-header">
+        <div>
+          <p class="eyebrow">DEMO PAYMENT</p>
+          <h2>Receive money</h2>
+        </div>
 
-  const value = Number(amount);
+        <button class="modal-close" aria-label="Close">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M6 6l12 12"></path>
+            <path d="M18 6 6 18"></path>
+          </svg>
+        </button>
+      </div>
 
-  if (!Number.isFinite(value) || value <= 0) {
-    alert("Please enter a valid amount.");
-    return;
+      <p class="modal-description">
+        Add demo money to your OfflinePay balance.
+      </p>
+
+      <label>
+        Amount
+        <div class="amount-input">
+          <span>₹</span>
+          <input
+            id="receiveAmountInput"
+            type="number"
+            min="1"
+            step="0.01"
+            placeholder="0.00"
+          >
+        </div>
+      </label>
+
+      <label>
+        From
+        <input
+          id="senderInput"
+          type="text"
+          placeholder="Name or demo ID"
+          autocomplete="off"
+        >
+      </label>
+
+      <button class="primary-button" id="confirmReceiveButton">
+        Add demo payment
+      </button>
+
+      <button class="secondary-button" id="cancelReceiveButton">
+        Cancel
+      </button>
+    </div>
+  `;
+
+  document.body.appendChild(overlay);
+
+  const amountInput = document.getElementById("receiveAmountInput");
+  const senderInput = document.getElementById("senderInput");
+
+  amountInput.focus();
+
+  function closeModal() {
+    overlay.remove();
   }
 
-  balance += value;
+  document
+    .querySelector(".modal-close")
+    .addEventListener("click", closeModal);
 
-  updateBalance();
+  document
+    .getElementById("cancelReceiveButton")
+    .addEventListener("click", closeModal);
 
-  addTransaction(
-    "Payment received",
-    value.toFixed(2),
-    "received"
-  );
+  document
+    .getElementById("confirmReceiveButton")
+    .addEventListener("click", () => {
+      const amount = Number(amountInput.value);
+      const sender = senderInput.value.trim() || "Demo sender";
+
+      if (!Number.isFinite(amount) || amount <= 0) {
+        alert("Please enter a valid amount.");
+        amountInput.focus();
+        return;
+      }
+
+      balance += amount;
+      updateBalance();
+
+      addTransaction(
+        "Payment received",
+        amount,
+        "received",
+        sender
+      );
+
+      closeModal();
+    });
 }
 
-document
-  .getElementById("sendButton")
-  .addEventListener("click", sendMoney);
-
-document
-  .getElementById("receiveButton")
-  .addEventListener("click", receiveMoney);
+sendButton.addEventListener("click", showSendScreen);
+receiveButton.addEventListener("click", showReceiveScreen);
 
 updateBalance();
