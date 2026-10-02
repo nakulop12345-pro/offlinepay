@@ -1,61 +1,159 @@
 // OfflinePay — Demo Wallet Engine
 // Demo money only. No bank, UPI, or real-money connection.
 
-let balance = 1000;
+const STORAGE_KEY = "offlinepay_demo_wallet";
+
+const defaultState = {
+  balance: 1000,
+  transactions: [
+    {
+      title: "Payment received",
+      person: "Demo transaction",
+      amount: 250,
+      type: "received",
+      time: Date.now() - 60000
+    },
+    {
+      title: "Payment sent",
+      person: "Demo transaction",
+      amount: 100,
+      type: "sent",
+      time: Date.now() - 120000
+    }
+  ]
+};
+
+function loadState() {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+
+    if (!saved) {
+      return structuredClone(defaultState);
+    }
+
+    const parsed = JSON.parse(saved);
+
+    if (
+      typeof parsed.balance !== "number" ||
+      !Array.isArray(parsed.transactions)
+    ) {
+      return structuredClone(defaultState);
+    }
+
+    return parsed;
+  } catch {
+    return structuredClone(defaultState);
+  }
+}
+
+let state = loadState();
 
 const balanceElement = document.getElementById("balance");
 const transactionsElement = document.getElementById("transactions");
 const sendButton = document.getElementById("sendButton");
 const receiveButton = document.getElementById("receiveButton");
 
+const navItems = document.querySelectorAll(".nav-item");
+const activitySection = document.querySelector(".activity");
+const homeSection = document.querySelector(".balance-card");
+
+function saveState() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
+
 function updateBalance() {
-  balanceElement.textContent = balance.toLocaleString("en-IN", {
+  balanceElement.textContent = state.balance.toLocaleString("en-IN", {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2
   });
 }
 
-function addTransaction(title, amount, type, person = "Demo transaction") {
-  const transaction = document.createElement("div");
-  transaction.className = "transaction";
+function escapeHTML(value) {
+  return String(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
 
-  const icon = type === "received"
-    ? `
-      <div class="transaction-icon received">
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M12 5v14"></path>
-          <path d="m6 13 6 6 6-6"></path>
-        </svg>
-      </div>
-    `
-    : `
-      <div class="transaction-icon sent">
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M12 19V5"></path>
-          <path d="m18 11-6-6-6 6"></path>
-        </svg>
+function renderTransactions(limit = null) {
+  transactionsElement.innerHTML = "";
+
+  const transactions = limit
+    ? state.transactions.slice(0, limit)
+    : state.transactions;
+
+  if (transactions.length === 0) {
+    transactionsElement.innerHTML = `
+      <div class="transaction">
+        <div class="transaction-info">
+          <strong>No transactions yet</strong>
+          <span>Your demo activity will appear here.</span>
+        </div>
       </div>
     `;
 
-  const formattedAmount =
-    type === "received"
-      ? `+₹${Number(amount).toFixed(2)}`
-      : `−₹${Number(amount).toFixed(2)}`;
+    return;
+  }
 
-  transaction.innerHTML = `
-    ${icon}
+  transactions.forEach((item) => {
+    const transaction = document.createElement("div");
+    transaction.className = "transaction";
 
-    <div class="transaction-info">
-      <strong>${title}</strong>
-      <span>${person}</span>
-    </div>
+    const icon = item.type === "received"
+      ? `
+        <div class="transaction-icon received">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 5v14"></path>
+            <path d="m6 13 6 6 6-6"></path>
+          </svg>
+        </div>
+      `
+      : `
+        <div class="transaction-icon sent">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 19V5"></path>
+            <path d="m18 11-6-6-6 6"></path>
+          </svg>
+        </div>
+      `;
 
-    <strong class="amount ${type === "received" ? "positive" : "negative"}">
-      ${formattedAmount}
-    </strong>
-  `;
+    const formattedAmount =
+      item.type === "received"
+        ? `+₹${Number(item.amount).toFixed(2)}`
+        : `−₹${Number(item.amount).toFixed(2)}`;
 
-  transactionsElement.prepend(transaction);
+    transaction.innerHTML = `
+      ${icon}
+
+      <div class="transaction-info">
+        <strong>${escapeHTML(item.title)}</strong>
+        <span>${escapeHTML(item.person)}</span>
+      </div>
+
+      <strong class="amount ${
+        item.type === "received" ? "positive" : "negative"
+      }">
+        ${formattedAmount}
+      </strong>
+    `;
+
+    transactionsElement.appendChild(transaction);
+  });
+}
+
+function addTransaction(title, amount, type, person) {
+  state.transactions.unshift({
+    title,
+    person,
+    amount,
+    type,
+    time: Date.now()
+  });
+
+  saveState();
+  renderTransactions(5);
 }
 
 function showSendScreen() {
@@ -114,7 +212,7 @@ function showSendScreen() {
 
       <div class="available-box">
         <span>Available demo balance</span>
-        <strong>₹${balance.toLocaleString("en-IN", {
+        <strong>₹${state.balance.toLocaleString("en-IN", {
           minimumFractionDigits: 2,
           maximumFractionDigits: 2
         })}</strong>
@@ -142,17 +240,19 @@ function showSendScreen() {
     overlay.remove();
   }
 
-  document
-    .querySelector(".modal-close")
-    .addEventListener("click", closeModal);
+  overlay.querySelector(".modal-close").addEventListener(
+    "click",
+    closeModal
+  );
 
-  document
-    .getElementById("cancelSendButton")
-    .addEventListener("click", closeModal);
+  document.getElementById("cancelSendButton").addEventListener(
+    "click",
+    closeModal
+  );
 
-  document
-    .getElementById("confirmSendButton")
-    .addEventListener("click", () => {
+  document.getElementById("confirmSendButton").addEventListener(
+    "click",
+    () => {
       const recipient = recipientInput.value.trim();
       const amount = Number(amountInput.value);
       const note = noteInput.value.trim();
@@ -169,14 +269,13 @@ function showSendScreen() {
         return;
       }
 
-      if (amount > balance) {
+      if (amount > state.balance) {
         alert("Insufficient demo balance.");
         amountInput.focus();
         return;
       }
 
-      balance -= amount;
-      updateBalance();
+      state.balance -= amount;
 
       addTransaction(
         "Payment sent",
@@ -185,8 +284,10 @@ function showSendScreen() {
         note ? `${recipient} • ${note}` : recipient
       );
 
+      updateBalance();
       closeModal();
-    });
+    }
+  );
 }
 
 function showReceiveScreen() {
@@ -258,17 +359,19 @@ function showReceiveScreen() {
     overlay.remove();
   }
 
-  document
-    .querySelector(".modal-close")
-    .addEventListener("click", closeModal);
+  overlay.querySelector(".modal-close").addEventListener(
+    "click",
+    closeModal
+  );
 
-  document
-    .getElementById("cancelReceiveButton")
-    .addEventListener("click", closeModal);
+  document.getElementById("cancelReceiveButton").addEventListener(
+    "click",
+    closeModal
+  );
 
-  document
-    .getElementById("confirmReceiveButton")
-    .addEventListener("click", () => {
+  document.getElementById("confirmReceiveButton").addEventListener(
+    "click",
+    () => {
       const amount = Number(amountInput.value);
       const sender = senderInput.value.trim() || "Demo sender";
 
@@ -278,8 +381,7 @@ function showReceiveScreen() {
         return;
       }
 
-      balance += amount;
-      updateBalance();
+      state.balance += amount;
 
       addTransaction(
         "Payment received",
@@ -288,11 +390,71 @@ function showReceiveScreen() {
         sender
       );
 
+      updateBalance();
       closeModal();
-    });
+    }
+  );
+}
+
+function showRecentActivity() {
+  renderTransactions(5);
+
+  activitySection.scrollIntoView({
+    behavior: "smooth",
+    block: "start"
+  });
+}
+
+function showAllActivity() {
+  renderTransactions();
+
+  activitySection.scrollIntoView({
+    behavior: "smooth",
+    block: "start"
+  });
+}
+
+function showHome() {
+  renderTransactions(5);
+
+  window.scrollTo({
+    top: 0,
+    behavior: "smooth"
+  });
 }
 
 sendButton.addEventListener("click", showSendScreen);
 receiveButton.addEventListener("click", showReceiveScreen);
 
+navItems.forEach((item, index) => {
+  item.addEventListener("click", () => {
+    navItems.forEach((nav) => nav.classList.remove("active"));
+    item.classList.add("active");
+
+    if (index === 0) {
+      showHome();
+    }
+
+    if (index === 1) {
+      showAllActivity();
+    }
+
+    if (index === 2) {
+      alert(
+        "OfflinePay Demo Profile\n\n" +
+        "Account: Demo User\n" +
+        "Status: Prototype\n" +
+        "Money: Demo only"
+      );
+    }
+  });
+});
+
+const viewAllButton = document.querySelector(".section-header button");
+
+viewAllButton.addEventListener("click", () => {
+  showAllActivity();
+});
+
 updateBalance();
+renderTransactions(5);

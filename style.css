@@ -433,4 +433,29 @@ svg {
   .modal-overlay {
     align-items: center;
   }
+}/* Activity view */
+
+.activity {
+  scroll-margin-top: 24px;
+}
+
+.transaction {
+  transition: background 0.15s ease;
+}
+
+.transaction:hover {
+  background: #fafbfc;
+}
+
+@media (max-width: 480px) {
+  .transaction {
+    padding: 15px;
+  }
+
+  .transaction-info strong {
+    max-width: 170px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
 }
