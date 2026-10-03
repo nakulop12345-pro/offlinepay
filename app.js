@@ -570,3 +570,10 @@ function showReceiveQR() {
     .getElementById("closeQRSecondary")
     .addEventListener("click", closeQR);
 }
+
+
+const scanButton = document.getElementById("scanButton");
+
+scanButton.addEventListener("click", function () {
+  alert("Scan QR clicked!");
+});
