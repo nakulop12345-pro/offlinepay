@@ -509,6 +509,9 @@ renderTransactions(5);// Demo QR receiving
 function showReceiveQR() {
   const root = document.getElementById("qrModalRoot");
 
+  const demoPayload =
+    "OFFLINEPAY-DEMO|USER:offlinepay-demo-001";
+
   root.innerHTML = `
     <div class="modal-overlay">
       <div class="modal qr-modal">
@@ -528,14 +531,7 @@ function showReceiveQR() {
         </div>
 
         <div class="qr-box">
-          <div class="qr-placeholder">
-            <div class="qr-grid">
-              <span></span><span></span><span></span><span></span>
-              <span></span><span></span><span></span><span></span>
-              <span></span><span></span><span></span><span></span>
-              <span></span><span></span><span></span><span></span>
-            </div>
-          </div>
+          <div id="realQRCode" class="real-qr"></div>
         </div>
 
         <div class="qr-user">
@@ -554,6 +550,13 @@ function showReceiveQR() {
       </div>
     </div>
   `;
+
+  new QRCode(document.getElementById("realQRCode"), {
+    text: demoPayload,
+    width: 190,
+    height: 190,
+    correctLevel: QRCode.CorrectLevel.M
+  });
 
   function closeQR() {
     root.innerHTML = "";
